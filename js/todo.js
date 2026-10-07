@@ -1,25 +1,33 @@
-let allTodos = [];
+// Load todos from LocalStorage
+let allTodos = JSON.parse(localStorage.getItem("todos")) || [];
 let currentEditId = null;
 let currentPriority = "low";
 
-// تعریف ترتیب اولویت‌ها برای مرتب‌سازی (بالا -> متوسط -> پایین)
+// Priority sorting weights
 const priorityOrder = {
   high: 1,
   medium: 2,
   low: 3,
 };
 
-// انتخاب المان‌های DOM
+// Save to LocalStorage
+const saveTodosToLocalStorage = () => {
+  localStorage.setItem("todos", JSON.stringify(allTodos));
+};
+
+// DOM Elements
 const formContainer = document.getElementById("add-task-form");
-const inputs = formContainer.querySelectorAll("input[type='text']");
+const inputs = formContainer
+  ? formContainer.querySelectorAll("input[type='text']")
+  : [];
 const titleInput = inputs[0];
 const descInput = inputs[1];
 
-// انتخاب دقیق دکمه‌های ذخیره و لغو
-const submitBtn = formContainer.querySelector("button[type='submit']");
+const submitBtn = formContainer
+  ? formContainer.querySelector("button[type='submit']")
+  : null;
 const cancelFormBtn = submitBtn ? submitBtn.previousElementSibling : null;
 
-// انتخاب دقیق دکمه تگ‌ها و کانتینر اولویت‌ها
 const toggleTagsBtn = document.getElementById("toggle-tags-btn");
 const tagsContainer = toggleTagsBtn ? toggleTagsBtn.nextElementSibling : null;
 const priorityBtns = tagsContainer
@@ -35,6 +43,7 @@ const uncompletedCount = document.getElementById("uncompleted-count");
 const completedCount = document.getElementById("completed-count");
 const emptyState = document.getElementById("empty-state");
 
+// Priority styles
 const prioritiesConfig = {
   high: {
     label: "بالا",
@@ -56,7 +65,7 @@ const prioritiesConfig = {
   },
 };
 
-// نمایش فرم افزودن تسک و بستن empty state
+// Show form
 if (showAddBtn) {
   showAddBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -69,20 +78,23 @@ if (showAddBtn) {
   });
 }
 
+// Reset inputs
 const clearInputs = () => {
-  titleInput.value = "";
-  descInput.value = "";
+  if (titleInput) titleInput.value = "";
+  if (descInput) descInput.value = "";
   currentEditId = null;
   currentPriority = "low";
-  submitBtn.textContent = "اضافه کردن تسک";
+  if (submitBtn) submitBtn.textContent = "اضافه کردن تسک";
   updatePriorityUI();
 };
 
-// بستن فرم و بررسی وضعیت empty state
+// Hide form
 const closeForm = () => {
   clearInputs();
-  formContainer.classList.remove("flex");
-  formContainer.classList.add("hidden");
+  if (formContainer) {
+    formContainer.classList.remove("flex");
+    formContainer.classList.add("hidden");
+  }
 
   const uncompletedTodos = allTodos.filter((t) => !t.completed);
   if (uncompletedTodos.length === 0 && emptyState) {
@@ -91,7 +103,6 @@ const closeForm = () => {
   }
 };
 
-// دکمه بستن فرم (ضربدر)
 if (cancelFormBtn) {
   cancelFormBtn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -99,7 +110,7 @@ if (cancelFormBtn) {
   });
 }
 
-// مدیریت کلیک روی دکمه تگ‌ها
+// Toggle priority tags menu
 if (toggleTagsBtn && tagsContainer) {
   tagsContainer.classList.remove("flex");
   tagsContainer.classList.add("hidden");
@@ -127,6 +138,7 @@ if (toggleTagsBtn && tagsContainer) {
   });
 }
 
+// Update priority UI
 const updatePriorityUI = () => {
   priorityBtns.forEach((btn, index) => {
     const types = ["high", "medium", "low"];
@@ -142,7 +154,7 @@ const updatePriorityUI = () => {
   });
 };
 
-// مدیریت کلیک روی دکمه‌های اولویت
+// Priority button click
 priorityBtns.forEach((btn, index) => {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -152,7 +164,7 @@ priorityBtns.forEach((btn, index) => {
   });
 });
 
-// بستن منوهای کباب با کلیک در بیرون آن‌ها
+// Close dropdowns on outside click
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".dropdown-container")) {
     document.querySelectorAll(".dropdown-menu").forEach((menu) => {
@@ -162,6 +174,7 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// Toggle single dropdown
 const toggleMenu = (todoId) => {
   document.querySelectorAll(".dropdown-menu").forEach((menu) => {
     if (menu.id !== `menu-${todoId}`) {
@@ -176,18 +189,19 @@ const toggleMenu = (todoId) => {
   }
 };
 
+// Render tasks
 const renderTodosHandler = () => {
   if (!uncompletedContainer || !completedContainer) return;
 
   uncompletedContainer.innerHTML = "";
   completedContainer.innerHTML = "";
 
-  // جداسازی و مرتب‌سازی تسک‌های انجام‌نشده بر اساس اولویت
+  // Sort uncompleted by priority
   const uncompletedTodos = allTodos
     .filter((t) => !t.completed)
     .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
-  // جداسازی و مرتب‌سازی تسک‌های انجام‌شده بر اساس اولویت
+  // Sort completed by priority
   const completedTodos = allTodos
     .filter((t) => t.completed)
     .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
@@ -210,7 +224,7 @@ const renderTodosHandler = () => {
     }
   }
 
-  // رندر تسک‌های انجام نشده
+  // Render uncompleted
   uncompletedTodos.forEach((todo) => {
     const config = prioritiesConfig[todo.priority];
     uncompletedContainer.insertAdjacentHTML(
@@ -252,7 +266,7 @@ const renderTodosHandler = () => {
     );
   });
 
-  // رندر تسک‌های انجام شده
+  // Render completed
   completedTodos.forEach((todo) => {
     const config = prioritiesConfig[todo.priority];
     completedContainer.insertAdjacentHTML(
@@ -291,6 +305,7 @@ const renderTodosHandler = () => {
   });
 };
 
+// Add or Edit task
 const addTodoHandler = (e) => {
   e.preventDefault();
   const title = titleInput.value.trim();
@@ -315,6 +330,7 @@ const addTodoHandler = (e) => {
     });
   }
 
+  saveTodosToLocalStorage();
   closeForm();
   renderTodosHandler();
 };
@@ -323,19 +339,24 @@ if (formContainer) {
   formContainer.addEventListener("submit", addTodoHandler);
 }
 
+// Delete task
 const deleteTodoHandler = (todoId) => {
   allTodos = allTodos.filter((todo) => todo.id !== todoId);
+  saveTodosToLocalStorage();
   renderTodosHandler();
 };
 
+// Toggle complete status
 const completeTodoHandler = (todoId) => {
   const todo = allTodos.find((t) => t.id === todoId);
   if (todo) {
     todo.completed = !todo.completed;
+    saveTodosToLocalStorage();
     renderTodosHandler();
   }
 };
 
+// Edit task
 const editTodoHandler = (todoId) => {
   const todo = allTodos.find((t) => t.id === todoId);
   if (todo) {
@@ -356,6 +377,7 @@ const editTodoHandler = (todoId) => {
   }
 };
 
+// Init
 document.addEventListener("DOMContentLoaded", () => {
   closeForm();
   renderTodosHandler();
