@@ -10,6 +10,22 @@ const priorityOrder = {
   low: 3,
 };
 
+// Format timestamp to Persian date and time string
+const formatPersianDate = (timestamp) => {
+  if (!timestamp) return "";
+  const date = new Date(timestamp);
+  const dayName = date.toLocaleDateString("fa-IR", { weekday: "long" });
+  const day = date.toLocaleDateString("fa-IR", { day: "numeric" });
+  const month = date.toLocaleDateString("fa-IR", { month: "long" });
+  const year = date.toLocaleDateString("fa-IR", { year: "numeric" });
+  const time = date.toLocaleTimeString("fa-IR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return `${dayName} ${day} ${month} ${year} - ${time}`;
+};
+
 // Save to LocalStorage
 const saveTodosToLocalStorage = () => {
   localStorage.setItem("todos", JSON.stringify(allTodos));
@@ -227,6 +243,8 @@ const renderTodosHandler = () => {
   // Render uncompleted
   uncompletedTodos.forEach((todo) => {
     const config = prioritiesConfig[todo.priority];
+    const createdDateStr = formatPersianDate(todo.createdAt || todo.id);
+
     uncompletedContainer.insertAdjacentHTML(
       "beforeend",
       `
@@ -239,9 +257,10 @@ const renderTodosHandler = () => {
                 </svg>
             </div>
             <div class="flex flex-col gap-1.5 flex-1 min-w-0">
-                <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-2.5 flex-wrap">
                     <h3 class="font-bold text-sm text-[var(--color-primary)] truncate">${todo.title}</h3>
                     <span class="px-2 py-0.5 text-[10px] font-bold rounded ${config.bg} ${config.text} shrink-0">${config.label}</span>
+                    <span class="text-[10px] font-medium text-[var(--color-tertiary-muted)] shrink-0">${createdDateStr}</span>
                 </div>
                 ${todo.desc ? `<p class="text-[11px] font-medium text-[var(--color-primary-muted)] truncate">${todo.desc}</p>` : ""}
             </div>
@@ -269,6 +288,8 @@ const renderTodosHandler = () => {
   // Render completed
   completedTodos.forEach((todo) => {
     const config = prioritiesConfig[todo.priority];
+    const createdDateStr = formatPersianDate(todo.createdAt || todo.id);
+
     completedContainer.insertAdjacentHTML(
       "beforeend",
       `
@@ -280,8 +301,9 @@ const renderTodosHandler = () => {
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                 </svg>
             </div>
-            <div class="flex flex-col flex-1 min-w-0">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0 flex-wrap">
                 <h3 class="font-bold text-sm text-[var(--color-primary-muted)] line-through truncate">${todo.title}</h3>
+                <span class="text-[10px] font-medium text-[var(--color-tertiary-muted)] shrink-0">${createdDateStr}</span>
             </div>
             <div class="relative shrink-0 dropdown-container">
                 <button type="button" onclick="toggleMenu(${todo.id})" class="p-1 text-[var(--color-tertiary-muted)] hover:text-[var(--color-primary)] transition-colors cursor-pointer">
@@ -327,6 +349,7 @@ const addTodoHandler = (e) => {
       desc,
       priority: currentPriority,
       completed: false,
+      createdAt: Date.now(),
     });
   }
 
