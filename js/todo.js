@@ -2,6 +2,7 @@
 let allTodos = JSON.parse(localStorage.getItem("todos")) || [];
 let currentEditId = null;
 let currentPriority = null; // Default is null (No priority selected)
+let toastTimeout = null;
 
 // Priority sorting weights
 const priorityOrder = {
@@ -62,6 +63,26 @@ const uncompletedCount = document.getElementById("uncompleted-count");
 const completedCount = document.getElementById("completed-count");
 const emptyState = document.getElementById("empty-state");
 
+// Toast error elements
+const errorToast = document.getElementById("error-toast");
+const errorToastMessage = document.getElementById("error-toast-message");
+
+// Helper function to show error toast for 3 seconds
+const showError = (message) => {
+  if (!errorToast || !errorToastMessage) return;
+
+  errorToastMessage.textContent = message;
+  errorToast.classList.remove("hidden");
+  errorToast.classList.add("flex");
+
+  if (toastTimeout) clearTimeout(toastTimeout);
+
+  toastTimeout = setTimeout(() => {
+    errorToast.classList.add("hidden");
+    errorToast.classList.remove("flex");
+  }, 3000);
+};
+
 // Priority styles configuration
 const prioritiesConfig = {
   high: {
@@ -84,10 +105,19 @@ const prioritiesConfig = {
   },
 };
 
-// Show form
+// Reset form location to default top position under showAddBtn
+const resetFormPosition = () => {
+  if (showAddBtn && formContainer) {
+    showAddBtn.after(formContainer);
+  }
+};
+
+// Show add task form
 if (showAddBtn) {
   showAddBtn.addEventListener("click", (e) => {
     e.preventDefault();
+    clearInputs();
+    resetFormPosition();
     formContainer.classList.remove("hidden");
     formContainer.classList.add("flex");
     if (emptyState) {
@@ -102,7 +132,6 @@ const updatePriorityUI = () => {
   const svgIcon = toggleTagsBtn ? toggleTagsBtn.querySelector("svg") : null;
 
   if (!currentPriority) {
-    // Show toggle button, hide selection menu & badge
     if (toggleTagsBtn) toggleTagsBtn.classList.remove("hidden");
     if (tagsContainer) {
       tagsContainer.classList.add("hidden");
@@ -112,13 +141,11 @@ const updatePriorityUI = () => {
       selectedTagBadge.classList.add("hidden");
       selectedTagBadge.classList.remove("flex");
     }
-    // Reset arrow icon state to closed (-rotate-90)
     if (svgIcon) {
       svgIcon.classList.add("-rotate-90");
       svgIcon.setAttribute("fill", "none");
     }
   } else {
-    // Priority is selected: Hide toggle button & menu, show badge with X icon
     const config = prioritiesConfig[currentPriority];
     if (toggleTagsBtn) toggleTagsBtn.classList.add("hidden");
     if (tagsContainer) {
@@ -143,9 +170,10 @@ const clearInputs = () => {
   updatePriorityUI();
 };
 
-// Hide form
+// Hide form and move back to original place
 const closeForm = () => {
   clearInputs();
+  resetFormPosition();
   if (formContainer) {
     formContainer.classList.remove("flex");
     formContainer.classList.add("hidden");
@@ -238,6 +266,9 @@ const toggleMenu = (todoId) => {
 const renderTodosHandler = () => {
   if (!uncompletedContainer || !completedContainer) return;
 
+  // Move form back to top before clearing containers to prevent DOM node loss
+  resetFormPosition();
+
   uncompletedContainer.innerHTML = "";
   completedContainer.innerHTML = "";
 
@@ -257,7 +288,12 @@ const renderTodosHandler = () => {
   if (completedCount)
     completedCount.textContent = completedTodos.length.toLocaleString("fa-IR");
 
-  if (uncompletedTodos.length === 0) {
+  // Check if form is currently open
+  const isFormOpen =
+    formContainer && !formContainer.classList.contains("hidden");
+
+  // Show empty state ONLY when no uncompleted tasks exist AND the form is closed
+  if (uncompletedTodos.length === 0 && !isFormOpen) {
     if (emptyState) {
       emptyState.classList.remove("hidden");
       emptyState.classList.add("flex");
@@ -277,7 +313,7 @@ const renderTodosHandler = () => {
     uncompletedContainer.insertAdjacentHTML(
       "beforeend",
       `
-        <article class="flex items-start gap-4 p-4 bg-[var(--card)] border border-[var(--btn-bg-muted)] rounded-xl relative group">
+        <article id="todo-item-${todo.id}" class="flex items-start gap-4 p-4 bg-[var(--card)] border border-[var(--btn-bg-muted)] rounded-xl relative group">
             <div class="absolute right-0 top-3 bottom-3 w-[4px] rounded-l-md ${config.border}"></div>
             <div class="relative flex items-center justify-center shrink-0 w-5 h-5 mt-0.5">
                 <input type="checkbox" onchange="completeTodoHandler(${todo.id})" class="peer appearance-none w-5 h-5 border-2 border-[var(--color-tertiary-muted)] rounded cursor-pointer checked:bg-[var(--color-primary-blue)] checked:border-[var(--color-primary-blue)] transition-colors"/>
@@ -322,7 +358,7 @@ const renderTodosHandler = () => {
     completedContainer.insertAdjacentHTML(
       "beforeend",
       `
-        <article class="flex items-center gap-4 p-4 bg-[var(--card)] border border-[var(--btn-bg-muted)] rounded-xl relative group opacity-85 transition-opacity">
+        <article id="todo-item-${todo.id}" class="flex items-center gap-4 p-4 bg-[var(--card)] border border-[var(--btn-bg-muted)] rounded-xl relative group opacity-85 transition-opacity">
             <div class="absolute right-0 top-3 bottom-3 w-[4px] rounded-l-md ${config.border}"></div>
             <div class="relative flex items-center justify-center shrink-0 w-5 h-5">
                 <input type="checkbox" checked onchange="completeTodoHandler(${todo.id})" class="peer appearance-none w-5 h-5 border-2 border-[var(--color-primary-blue)] bg-[var(--color-primary-blue)] rounded cursor-pointer transition-colors"/>
@@ -354,6 +390,14 @@ const renderTodosHandler = () => {
       `,
     );
   });
+
+  // If in edit mode, re-attach form under the active task card
+  if (currentEditId) {
+    const targetArticle = document.getElementById(`todo-item-${currentEditId}`);
+    if (targetArticle) {
+      targetArticle.after(formContainer);
+    }
+  }
 };
 
 // Add or Edit task
@@ -362,23 +406,25 @@ const addTodoHandler = (e) => {
   const title = titleInput.value.trim();
   const desc = descInput.value.trim();
 
-  if (!title) return;
-
-  const targetPriority = currentPriority || "low"; // Fallback to "low" if no priority selected
+  // Show error if ANY of the fields is missing
+  if (!title || !desc || !currentPriority) {
+    showError("لطفاً نام تسک، توضیحات و اولویت را وارد کنید.");
+    return;
+  }
 
   if (currentEditId) {
     const index = allTodos.findIndex((t) => t.id === currentEditId);
     if (index > -1) {
       allTodos[index].title = title;
       allTodos[index].desc = desc;
-      allTodos[index].priority = targetPriority;
+      allTodos[index].priority = currentPriority;
     }
   } else {
     allTodos.push({
       id: Date.now(),
       title,
       desc,
-      priority: targetPriority,
+      priority: currentPriority,
       completed: false,
       createdAt: Date.now(),
     });
@@ -410,7 +456,7 @@ const completeTodoHandler = (todoId) => {
   }
 };
 
-// Edit task
+// Edit task - Moves form directly under the selected todo card
 const editTodoHandler = (todoId) => {
   const todo = allTodos.find((t) => t.id === todoId);
   if (todo) {
@@ -420,6 +466,13 @@ const editTodoHandler = (todoId) => {
     currentEditId = todoId;
 
     updatePriorityUI();
+
+    // Move form element directly after the selected todo item
+    const targetArticle = document.getElementById(`todo-item-${todoId}`);
+    if (targetArticle) {
+      targetArticle.after(formContainer);
+    }
+
     formContainer.classList.remove("hidden");
     formContainer.classList.add("flex");
     if (emptyState) {
@@ -427,7 +480,7 @@ const editTodoHandler = (todoId) => {
       emptyState.classList.add("hidden");
     }
     submitBtn.textContent = "ویرایش تسک";
-    formContainer.scrollIntoView({ behavior: "smooth" });
+    formContainer.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 };
 

@@ -16,6 +16,27 @@
   <body
     class="preload bg-[var(--bg-primary)] min-h-screen text-[var(--color-primary)] p-4 lg:p-6 flex flex-col lg:flex-row gap-6 transition-colors duration-300 relative overflow-x-hidden lg:overflow-x-visible"
   >
+    <!-- error box -->
+    <div
+      id="error-toast"
+      class="fixed top-5 left-1/2 -translate-x-1/2 z-50 hidden items-center gap-2 px-4 py-3 bg-[var(--color-secondary-red)] border border-[var(--color-primary-red)] text-[var(--color-primary-red)] font-bold text-xs rounded-xl shadow-lg transition-all duration-300"
+    >
+      <svg
+        class="w-5 h-5 shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+        />
+      </svg>
+      <span id="error-toast-message"></span>
+    </div>
+
     <!-- Overlay Mobile mode fiels -->
     <div
       id="sidebar-overlay"
@@ -391,7 +412,7 @@
             تسک‌های امروز
           </h2>
           <p class="font-bold text-xs text-[var(--color-secondary-muted)]">
-            <span id="uncompleted-count">۳</span> تسک را باید انجام دهید.
+            <span id="uncompleted-count"></span> تسک را باید انجام دهید.
           </p>
         </div>
 
@@ -449,7 +470,6 @@
               type="text"
               placeholder="نام تسک"
               class="bg-transparent text-[var(--color-primary)] font-semibold text-sm focus-visible:outline-none placeholder:text-[var(--color-primary-muted)]"
-              required
             />
             <input
               type="text"
@@ -458,7 +478,6 @@
             />
 
             <div class="flex flex-col gap-3 mt-2">
-              <!-- دکمه اصلی انتخاب تگ‌ها -->
               <button
                 id="toggle-tags-btn"
                 type="button"
@@ -479,39 +498,36 @@
                 <span class="text-xs font-semibold">تگ‌ها</span>
               </button>
 
-              <!-- منوی انتخاب اولویت‌ها همراه با افکت Hover قبل از انتخاب -->
               <div
                 id="tags-container"
-                class="hidden items-center bg-[var(--card)] border border-[var(--btn-bg-muted)] rounded-xl p-1.5 w-max gap-1 shadow-md"
+                class="hidden items-center bg-[var(--card)] border border-[var(--btn-bg-muted)] rounded-lg p-1.5 w-max gap-1 shadow-md"
               >
                 <button
                   type="button"
-                  class="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--color-secondary-red)] text-[var(--color-primary-red)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
+                  class="px-3 py-1 text-xs font-bold rounded-sm bg-[var(--color-secondary-red)] text-[var(--color-primary-red)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
                 >
                   بالا
                 </button>
                 <div class="w-[1px] h-4 bg-[var(--btn-bg-muted)]"></div>
                 <button
                   type="button"
-                  class="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--color-secondary-yellow)] text-[var(--color-primary-yellow)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
+                  class="px-3 py-1 text-xs font-bold rounded-sm bg-[var(--color-secondary-yellow)] text-[var(--color-primary-yellow)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
                 >
                   متوسط
                 </button>
                 <div class="w-[1px] h-4 bg-[var(--btn-bg-muted)]"></div>
                 <button
                   type="button"
-                  class="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--color-secondary-green)] text-[var(--color-primary-green)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
+                  class="px-3 py-1 text-xs font-bold rounded-sm bg-[var(--color-secondary-green)] text-[var(--color-primary-green)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
                 >
                   پایین
                 </button>
               </div>
 
-              <!-- تگ انتخاب‌شده (متن در راست، ضربدر در سمت چپ) -->
               <div
                 id="selected-tag-badge"
-                class="hidden items-center gap-2 px-3 py-1.5 rounded-xl w-max text-xs font-bold transition-all"
+                class="hidden items-center gap-2 px-3 py-1.5 rounded-md w-max text-xs font-bold transition-all"
               >
-                <span id="selected-tag-label"></span>
                 <button
                   id="remove-tag-btn"
                   type="button"
@@ -532,6 +548,7 @@
                     />
                   </svg>
                 </button>
+                <span id="selected-tag-label"></span>
               </div>
             </div>
           </div>
@@ -539,7 +556,6 @@
           <div
             class="flex justify-end gap-2 items-center px-4 py-3 bg-[var(--bg-primary)]"
           >
-            <!-- اضافه شدن ID به دکمه بستن فرم -->
             <button
               id="close-form-btn"
               type="button"
@@ -562,7 +578,7 @@
           </div>
         </form>
 
-        <!-- uncomplete todos container (تسک‌های استاتیک نمونه حذف شدند) -->
+        <!-- uncomplete todos container -->
         <div id="uncompleted-tasks-container" class="flex flex-col gap-3"></div>
 
         <div class="flex flex-col gap-1 mt-10 mb-6">
@@ -570,11 +586,11 @@
             تسک‌های انجام شده
           </h2>
           <p class="font-bold text-xs text-[var(--color-secondary-muted)]">
-            <span id="completed-count">۰</span> تسک انجام شده است.
+            <span id="completed-count"></span> تسک انجام شده است.
           </p>
         </div>
 
-        <!-- complete todos container (تسک‌های استاتیک نمونه حذف شدند) -->
+        <!-- complete todos container -->
         <div id="completed-tasks-container" class="flex flex-col gap-3"></div>
       </section>
     </main>
