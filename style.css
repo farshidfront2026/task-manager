@@ -47,3 +47,28 @@
 * {
   font-family: "Yekan", sans-serif;
 }
+
+html {
+  scrollbar-gutter: stable;
+  overflow-y: auto;
+  scrollbar-color: var(--btn-bg-muted) var(--bg-primary);
+  scrollbar-width: thin;
+}
+/* Scrolbar Management */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--btn-bg-muted);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tertiary-muted);
+}
