@@ -1,7 +1,7 @@
 // Load todos from LocalStorage
 let allTodos = JSON.parse(localStorage.getItem("todos")) || [];
 let currentEditId = null;
-let currentPriority = "low";
+let currentPriority = null; // Default is null (No priority selected)
 
 // Priority sorting weights
 const priorityOrder = {
@@ -45,7 +45,10 @@ const submitBtn = formContainer
 const cancelFormBtn = submitBtn ? submitBtn.previousElementSibling : null;
 
 const toggleTagsBtn = document.getElementById("toggle-tags-btn");
-const tagsContainer = toggleTagsBtn ? toggleTagsBtn.nextElementSibling : null;
+const tagsContainer = document.getElementById("tags-container");
+const selectedTagBadge = document.getElementById("selected-tag-badge");
+const selectedTagLabel = document.getElementById("selected-tag-label");
+const removeTagBtn = document.getElementById("remove-tag-btn");
 const priorityBtns = tagsContainer
   ? tagsContainer.querySelectorAll("button")
   : [];
@@ -59,7 +62,7 @@ const uncompletedCount = document.getElementById("uncompleted-count");
 const completedCount = document.getElementById("completed-count");
 const emptyState = document.getElementById("empty-state");
 
-// Priority styles
+// Priority styles configuration
 const prioritiesConfig = {
   high: {
     label: "بالا",
@@ -94,12 +97,48 @@ if (showAddBtn) {
   });
 }
 
+// Update priority tag UI state
+const updatePriorityUI = () => {
+  const svgIcon = toggleTagsBtn ? toggleTagsBtn.querySelector("svg") : null;
+
+  if (!currentPriority) {
+    // Show toggle button, hide selection menu & badge
+    if (toggleTagsBtn) toggleTagsBtn.classList.remove("hidden");
+    if (tagsContainer) {
+      tagsContainer.classList.add("hidden");
+      tagsContainer.classList.remove("flex");
+    }
+    if (selectedTagBadge) {
+      selectedTagBadge.classList.add("hidden");
+      selectedTagBadge.classList.remove("flex");
+    }
+    // Reset arrow icon state to closed (-rotate-90)
+    if (svgIcon) {
+      svgIcon.classList.add("-rotate-90");
+      svgIcon.setAttribute("fill", "none");
+    }
+  } else {
+    // Priority is selected: Hide toggle button & menu, show badge with X icon
+    const config = prioritiesConfig[currentPriority];
+    if (toggleTagsBtn) toggleTagsBtn.classList.add("hidden");
+    if (tagsContainer) {
+      tagsContainer.classList.add("hidden");
+      tagsContainer.classList.remove("flex");
+    }
+    if (selectedTagBadge && selectedTagLabel) {
+      selectedTagLabel.textContent = config.label;
+      selectedTagBadge.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl w-max text-xs font-bold ${config.bg} ${config.text}`;
+      selectedTagBadge.classList.remove("hidden");
+    }
+  }
+};
+
 // Reset inputs
 const clearInputs = () => {
   if (titleInput) titleInput.value = "";
   if (descInput) descInput.value = "";
   currentEditId = null;
-  currentPriority = "low";
+  currentPriority = null;
   if (submitBtn) submitBtn.textContent = "اضافه کردن تسک";
   updatePriorityUI();
 };
@@ -128,9 +167,6 @@ if (cancelFormBtn) {
 
 // Toggle priority tags menu
 if (toggleTagsBtn && tagsContainer) {
-  tagsContainer.classList.remove("flex");
-  tagsContainer.classList.add("hidden");
-
   toggleTagsBtn.addEventListener("click", (e) => {
     e.preventDefault();
     const isHidden = tagsContainer.classList.contains("hidden");
@@ -154,23 +190,7 @@ if (toggleTagsBtn && tagsContainer) {
   });
 }
 
-// Update priority UI
-const updatePriorityUI = () => {
-  priorityBtns.forEach((btn, index) => {
-    const types = ["high", "medium", "low"];
-    const pType = types[index];
-    const config = prioritiesConfig[pType];
-
-    btn.className = `px-3 py-1.5 text-[10px] font-bold rounded cursor-pointer transition-colors ${config.text}`;
-    if (pType === currentPriority) {
-      btn.classList.add(config.bg);
-    } else {
-      btn.classList.add(`hover:${config.bg}`);
-    }
-  });
-};
-
-// Priority button click
+// Priority button selection click
 priorityBtns.forEach((btn, index) => {
   btn.addEventListener("click", (e) => {
     e.preventDefault();
@@ -179,6 +199,15 @@ priorityBtns.forEach((btn, index) => {
     updatePriorityUI();
   });
 });
+
+// Remove selected priority tag button (cross button)
+if (removeTagBtn) {
+  removeTagBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    currentPriority = null;
+    updatePriorityUI();
+  });
+}
 
 // Close dropdowns on outside click
 document.addEventListener("click", (e) => {
@@ -242,7 +271,7 @@ const renderTodosHandler = () => {
 
   // Render uncompleted
   uncompletedTodos.forEach((todo) => {
-    const config = prioritiesConfig[todo.priority];
+    const config = prioritiesConfig[todo.priority || "low"];
     const createdDateStr = formatPersianDate(todo.createdAt || todo.id);
 
     uncompletedContainer.insertAdjacentHTML(
@@ -287,7 +316,7 @@ const renderTodosHandler = () => {
 
   // Render completed
   completedTodos.forEach((todo) => {
-    const config = prioritiesConfig[todo.priority];
+    const config = prioritiesConfig[todo.priority || "low"];
     const createdDateStr = formatPersianDate(todo.createdAt || todo.id);
 
     completedContainer.insertAdjacentHTML(
@@ -335,19 +364,21 @@ const addTodoHandler = (e) => {
 
   if (!title) return;
 
+  const targetPriority = currentPriority || "low"; // Fallback to "low" if no priority selected
+
   if (currentEditId) {
     const index = allTodos.findIndex((t) => t.id === currentEditId);
     if (index > -1) {
       allTodos[index].title = title;
       allTodos[index].desc = desc;
-      allTodos[index].priority = currentPriority;
+      allTodos[index].priority = targetPriority;
     }
   } else {
     allTodos.push({
       id: Date.now(),
       title,
       desc,
-      priority: currentPriority,
+      priority: targetPriority,
       completed: false,
       createdAt: Date.now(),
     });

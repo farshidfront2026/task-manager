@@ -458,13 +458,14 @@
             />
 
             <div class="flex flex-col gap-3 mt-2">
+              <!-- دکمه اصلی انتخاب تگ‌ها -->
               <button
                 id="toggle-tags-btn"
                 type="button"
                 class="flex items-center justify-center gap-1.5 p-1.5 rounded-md border border-[var(--btn-bg-muted)] bg-transparent w-max text-[var(--color-tertiary-muted)] hover:text-[var(--color-primary-muted)] transition-colors cursor-pointer"
               >
                 <svg
-                  class="w-4 h-4 -rotate-90 transition-transform"
+                  class="w-4 h-4 -rotate-90 transition-transform duration-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 16 16"
@@ -478,30 +479,58 @@
                 <span class="text-xs font-semibold">تگ‌ها</span>
               </button>
 
-              <!-- اضافه شدن ID برای انتخاب راحت‌تر در JS -->
+              <!-- منوی انتخاب اولویت‌ها همراه با افکت Hover قبل از انتخاب -->
               <div
                 id="tags-container"
-                class="hidden items-center bg-[var(--bg-primary)] border border-[var(--btn-bg-muted)] rounded-lg p-1 w-max gap-1"
+                class="hidden items-center bg-[var(--card)] border border-[var(--btn-bg-muted)] rounded-xl p-1.5 w-max gap-1 shadow-md"
               >
                 <button
                   type="button"
-                  class="px-3 py-1.5 text-[10px] font-bold rounded bg-[var(--color-secondary-red)] text-[var(--color-primary-red)] cursor-pointer"
+                  class="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--color-secondary-red)] text-[var(--color-primary-red)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
                 >
                   بالا
                 </button>
                 <div class="w-[1px] h-4 bg-[var(--btn-bg-muted)]"></div>
                 <button
                   type="button"
-                  class="px-3 py-1.5 text-[10px] font-bold rounded text-[var(--color-primary-yellow)] hover:bg-[var(--color-secondary-yellow)] transition-colors cursor-pointer"
+                  class="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--color-secondary-yellow)] text-[var(--color-primary-yellow)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
                 >
                   متوسط
                 </button>
                 <div class="w-[1px] h-4 bg-[var(--btn-bg-muted)]"></div>
                 <button
                   type="button"
-                  class="px-3 py-1.5 text-[10px] font-bold rounded text-[var(--color-primary-green)] hover:bg-[var(--color-secondary-green)] transition-colors cursor-pointer"
+                  class="px-3 py-1 text-xs font-bold rounded-lg bg-[var(--color-secondary-green)] text-[var(--color-primary-green)] cursor-pointer hover:scale-105 hover:brightness-95 active:scale-95 transition-all duration-200"
                 >
                   پایین
+                </button>
+              </div>
+
+              <!-- تگ انتخاب‌شده (متن در راست، ضربدر در سمت چپ) -->
+              <div
+                id="selected-tag-badge"
+                class="hidden items-center gap-2 px-3 py-1.5 rounded-xl w-max text-xs font-bold transition-all"
+              >
+                <span id="selected-tag-label"></span>
+                <button
+                  id="remove-tag-btn"
+                  type="button"
+                  class="hover:opacity-70 transition-opacity cursor-pointer flex items-center justify-center"
+                  title="حذف اولویت"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
                 </button>
               </div>
             </div>
